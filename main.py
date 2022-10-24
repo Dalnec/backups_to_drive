@@ -45,7 +45,10 @@ def create_file(file_name, owner):
     file_name_bk = file_name +'.backup'
     gz_name = file_name_bk +'.gz'
 
-    cmd = f"pg_dump --dbname=postgresql://{owner}:{owner}@127.0.0.1:5432/{file_name} -f {file_name_bk}"
+    if owner == 'postgres':
+        cmd = f"pg_dump --dbname=postgresql://postgres:{db_pass}@127.0.0.1:5432/{file_name} -f {file_name_bk}"
+    else:
+        cmd = f"pg_dump --dbname=postgresql://{owner}:{owner}@127.0.0.1:5432/{file_name} -f {file_name_bk}"
     # print(cmd)
 
     with gzip.open(file_name_bk, 'wb') as f:
