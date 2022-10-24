@@ -12,12 +12,10 @@ from send_drive import uploadFile
 with open('config.json', 'r') as config_file:
     config = json.load(config_file)
 
-print(config["db_pass"])
-
-db_user = config["db_pass"] or 'postgres'
+db_user = config["db_user"] or 'postgres'
 db_pass = config["db_pass"] or 'admin'
-db_host = config["db_pass"] or '127.0.0.1'
-db_port = config["db_pass"] or 5432
+db_host = config["db_host"] or '127.0.0.1'
+db_port = config["db_port"] or 5432
 
 
 def __conectarse():

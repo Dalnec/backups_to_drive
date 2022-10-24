@@ -1,6 +1,6 @@
 {
-    "db_user": "postgres",
-    "db_pass": "07712546150990+",
-    "db_host": "127.0.0.1",
-    "db_port": 5432
+    "db_user": "",
+    "db_pass": "",
+    "db_host": "",
+    "db_port": ""
 }
