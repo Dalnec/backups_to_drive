@@ -52,7 +52,7 @@ def create_file(file_name, owner):
     # print(cmd)
 
     with gzip.open(file_name_bk, 'wb') as f:
-        popen = subprocess.Popen(cmd, stdout=subprocess.PIPE, universal_newlines=True)    
+        popen = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, universal_newlines=True)    
     for stdout_line in iter(popen.stdout.readline, ""):
         f.write(stdout_line.encode('utf-8'))    
     popen.stdout.close()
@@ -82,16 +82,16 @@ def do_backups():
     index = 0
     for database in databases:
         index+=1
-        printProgressBar(index, l, prefix = 'Progress:', suffix = 'Complete', length = 50)
         db, owner = database
         file_name, gz_file = create_file(db, owner)
         time.sleep(1)
+        os.remove(file_name)
         id_drive_db = uploadFile(gz_file, gz_file, "application/gzip")
         f.write(f"{index}: {db} \t=> {id_drive_db}\n")
-
-        time.sleep(1)
-        os.remove(file_name)
         os.remove(gz_file)
+        time.sleep(1)
+        printProgressBar(index, l, prefix = 'Progress:', suffix = 'Complete', length = 50)
+
     f.close()
 
 def main():
