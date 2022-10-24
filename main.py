@@ -4,13 +4,20 @@ import gzip
 import subprocess
 import shutil
 import time
+import json
 
 from send_drive import uploadFile
 
-db_user = 'postgres'
-db_pass = 'admin'
-db_host = '127.0.0.1'
-db_port = 5432
+
+with open('config.json', 'r') as config_file:
+    config = json.load(config_file)
+
+print(config["db_pass"])
+
+db_user = config["db_pass"] or 'postgres'
+db_pass = config["db_pass"] or 'admin'
+db_host = config["db_pass"] or '127.0.0.1'
+db_port = config["db_pass"] or 5432
 
 
 def __conectarse():
