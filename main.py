@@ -1,6 +1,6 @@
 import os
 import time
-from database import create_file, get_databases, showDBs
+from db import create_file, get_databases, showDBs
 from send_drive import download_file, list_items, searchFile, uploadFile
 from tools import printProgressBar
 
