@@ -1,81 +1,9 @@
 import os
-import psycopg2
-import gzip
-import subprocess
-import shutil
 import time
-import json
+from database import create_file, get_databases, showDBs
+from send_drive import download_file, list_items, searchFile, uploadFile
+from tools import printProgressBar
 
-from send_drive import uploadFile
-
-
-with open('config.json', 'r') as config_file:
-    config = json.load(config_file)
-
-db_user = config["db_user"] or 'postgres'
-db_pass = config["db_pass"] or 'admin'
-db_host = config["db_host"] or '127.0.0.1'
-db_port = config["db_port"] or 5432
-
-
-def __conectarse():
-    try:
-        cnx = psycopg2.connect( user=db_user, password=db_pass, host=db_host, port=db_port)
-        return cnx
-    except (Exception, psycopg2.Error) as error:
-        print(f'Connection exception {error}')
-
-def get_databases():    
-    conn = __conectarse()
-    cursor = conn.cursor()
-    cursor.execute("SELECT dbs.datname, roles.rolname FROM pg_database dbs, pg_roles roles WHERE datistemplate = false and dbs.datdba = roles.oid and dbs.datname<>'postgres';")
-    # cursor.execute("SELECT dbs.datname, roles.rolname FROM pg_database dbs, pg_roles roles WHERE datistemplate = false and dbs.datdba = roles.oid and dbs.datname<>'postgres' and roles.rolname<>'comercial'and roles.rolname<>'subcafae';")
-    return cursor.fetchall()
-
-def showDBs():
-    dbs = get_databases()
-    count=0
-    print("DATABASES\t=>\tOWNERS")
-    for db in dbs:
-        count+=1
-        print(f"{count} {db[0]}\t=> {db[1]}")
-    main()
-
-
-def create_file(file_name, owner):
-    file_name_bk = file_name +'.backup'
-    gz_name = file_name_bk +'.gz'
-
-    if owner == 'postgres':
-        # cmd = f"pg_dump --dbname=postgresql://postgres:{db_pass}@127.0.0.1:5432/{file_name} -f {file_name_bk}"
-        cmd = f"PGPASSWORD='{db_pass}' pg_dump -d {file_name} -p 5432 -U postgres -h localhost -F t -f {file_name_bk}"
-    else:
-        # cmd = f"pg_dump --dbname=postgresql://{owner}:{owner}@127.0.0.1:5432/{file_name} -f {file_name_bk}"
-        cmd = f"PGPASSWORD='{owner}' pg_dump -d {file_name} -p 5432 -U {owner} -h localhost -F t -f {file_name_bk}"
-    # print(cmd)
-
-    with gzip.open(file_name_bk, 'wb') as f:
-        popen = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, universal_newlines=True)    
-    for stdout_line in iter(popen.stdout.readline, ""):
-        f.write(stdout_line.encode('utf-8'))    
-    popen.stdout.close()
-    popen.wait()
-    time.sleep(0.5)
-    
-    with open(file_name_bk, 'rb') as f_in:
-        with gzip.open(gz_name, 'wb') as f_out:
-            shutil.copyfileobj(f_in, f_out)
-    return file_name_bk, gz_name
-
-# Print iterations progress
-def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
-    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
-    filledLength = int(length * iteration // total)
-    bar = fill * filledLength + '-' * (length - filledLength)
-    print(f'\r{prefix} |{bar}| {percent}% {suffix}', end = printEnd)
-    # Print New Line on Complete
-    if iteration == total: 
-        print()
 
 def do_backups():
     f = open("logs.txt", "a")
@@ -101,17 +29,30 @@ def main():
     print("\nOPTIONS:")
     print("1.- Show DataBases")
     print("2.- Generate Backups")    
+    print("3.- List Backups drive")    
+    print("4.- Download Backup drive")    
     print("0.- Exit")    
     option = int(input("Enter a number:"))
 
     if option == 1:
         showDBs()
+        main()
     elif option == 2:
         do_backups()
+        main()
+    elif option == 3:
+        list_items()
+        main()
+    elif option == 4:
+        name = input("Enter name:")
+        file_id, file_name = searchFile(100, name, '', 'id')
+        download_file(file_id, file_name)
+        # main()
     elif option == 0:
         print("Exit")
     else:
         print("Opcion no valida")
+        main()
 
 if __name__ == '__main__':
     main()

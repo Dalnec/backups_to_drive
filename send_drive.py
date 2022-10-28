@@ -1,15 +1,15 @@
 from __future__ import print_function
 import pickle
 import os.path
-# import pkg_resources.py2_warn
+import io
 from googleapiclient import errors
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
-from googleapiclient.http import MediaFileUpload
+from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
 
 # If modifying these scopes, delete the file token.pickle.
-SCOPES = ['https://www.googleapis.com/auth/drive'] #.metadata.readonly']
+SCOPES = ['https://www.googleapis.com/auth/drive.appdata'] #.metadata.readonly']
 
 def getCredentials():
     creds = None
@@ -31,10 +31,10 @@ def getCredentials():
 
 def list_items():
     services = getCredentials()
-    results = services.files().list(pageSize=5, 
-                                    fields="nextPageToken, files(id, name)").execute()
+    folder_id = '144sUdLku04IQPpOgcvEaNTDwYs8y3vQy'
+    query = f"'{folder_id}' in parents"
+    results = services.files().list(q=query, pageSize=10, fields="nextPageToken, files(id, name)").execute()
     items = results.get('files', [])
-
     if not items:
         print('No files found.')
     else:
@@ -44,45 +44,63 @@ def list_items():
 
 def uploadFile(filename,filepath,mimetype):
     services = getCredentials()
-    # print(f'Backup {filename} Uploading')
-
     folder_id = '144sUdLku04IQPpOgcvEaNTDwYs8y3vQy'
     file_metadata = {'name': filename, 'parents': [folder_id]}
     media = MediaFileUpload(filepath, mimetype = mimetype, resumable = True)
     file = services.files().create(body = file_metadata, media_body = media, fields='id').execute()
     return file.get('id')
 
-def searchFile(size, query, filename):
+def searchFile(size, queryname, filename, back):
     services = getCredentials()
-    print(services)
-    print('Searching File...')
-    f_mT = 'application/x-rar-compressed'
-    # results = services.files().list(pageSize = size, #                                 fields = "nextPageToken, files(id)", #                                 q=query).execute()
-    results = services.files().list(q ="mimeType='application/x-rar-compressed'and name contains 'Cubas'", spaces='drive', pageSize=10, fields="nextPageToken, files(id, name)").execute()
+    mimeType='application/x-rar-compressed'
+    folder_id = '144sUdLku04IQPpOgcvEaNTDwYs8y3vQy'
+    q = f"'{folder_id}' in parents and name='{queryname}'"
+    results = services.files().list(q=q, spaces='drive', pageSize=10, fields="nextPageToken, files(id, name)").execute()
     items = results.get('files', [])
     print(items)
-    # if not items:
-    #     print('No files found.')        
-    #     uploadFile(filename, filename, f_mT)
-    # else:
-    #     print('Files found.')        
-        # for item in items:            
-            # fileId = item['id']
-        # updateFile(fileId, filename, f_mT)
-        # return item
+    
+    if not items:
+        print('No files found.')        
+        uploadFile(filename, filename, mimeType)
+    else:
+        print('Files found.')
+        if back == 'id':
+            return items[0]['id'], items[0]['name']
+
+        for item in items:            
+            fileId = item['id']
+        updateFile(fileId, filename, mimeType)
+        return item
     
 def updateFile(file_id, new_filename, new_mime_type):
-    services = getCredentials()
-    print('Backup Updating...')
     try:
+        services = getCredentials()
         file = {}
-        media_body = MediaFileUpload(new_filename, 
-                                    mimetype=new_mime_type, 
-                                    resumable=True)
-        updated_file = services.files().update(fileId=file_id,                                           
-                                            body=file,
-                                            media_body=media_body).execute()
+        media_body = MediaFileUpload(new_filename, mimetype=new_mime_type, resumable=True)
+        updated_file = services.files().update(fileId=file_id, body=file, media_body=media_body).execute()
         return print('Updated: %s' % (updated_file['id']))
     except errors.HttpError as error:
         print('%s An error occurred: %s' % (error)) 
         return None
+
+def download_file(file_id, file_name):
+    try:
+        services = getCredentials()
+        request = services.files().get_media(fileId=file_id)
+        file = io.BytesIO()
+        downloader = MediaIoBaseDownload(file, request)
+        done = False
+        while done is False:
+            status, done = downloader.next_chunk()
+            print(F'Download {int(status.progress() * 100)}.')
+        
+        file.seek(0)
+        with open(os.path.join('./', file_name), 'wb') as f:
+            f.write(file.read())
+            f.close
+
+    except error.HttpError as error:
+        print(F'An error occurred: {error}')
+        file = None
+
+    return file.getvalue()
