@@ -60,3 +60,24 @@ def create_file(file_name, owner):
         with gzip.open(gz_name, 'wb') as f_out:
             shutil.copyfileobj(f_in, f_out)
     return file_name_bk, gz_name
+
+def write_file(filename, data):
+    try:
+        f = open(filename, "wb")
+    except IOError as e:
+        print(e.errno, e.message)
+    else:
+        f.write(data)
+        f.close()
+
+def decompress(filename):
+    f = gzip.open(filename)
+    write_file(filename[:filename.rfind(".gz")], f.read())
+    f.close()
+
+def restore_zenda(file_name, owner):
+    decompress(f"db_{file_name}.backup.gz")
+    if owner == 'postgres':
+        cmd = f'pg_restore -h localhost -p 5432 -U postgres -d {file_name} -v "db_{file_name}.backup"'
+    else:
+        # cmd = f"pg_dump --dbname=postgresql://{owner}:{owner}@127.0.0.1:5432/{file_name} -f {file_name_bk}
