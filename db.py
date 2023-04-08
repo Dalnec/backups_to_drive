@@ -5,6 +5,9 @@ import shutil
 import json
 import time
 import os
+import shlex
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+
 
 with open('config.json', 'r') as config_file:
     config = json.load(config_file)
@@ -72,27 +75,46 @@ def extract_file(src_file):
                 f_out.write(line)
     return extracted_file
 
-def restore_postgres_db(db, backup_file):
-    """
-    Restore postgres db from a file.
-    """
 
+def create_db(database, soft_type):
+    if soft_type == '1': 
+        db_name = f"db_{database}"
+        user = 'zenda'
+    else :
+        db_name = f"{database}_db"
+        user = 'restobar'
     try:
-        process = subprocess.Popen(
-            ['pg_restore',
-            '--no-owner',
-            '--dbname=postgresql://{}:{}@{}:{}/{}'.formatdb_(db_user,
-                                                        db_pass,
-                                                        db_host,
-                                                        db_port, eval(db)),
-            '-v',
-            backup_file],
-            stdout=subprocess.PIPE
-        )
-        output = process.communicate()[0]
-        if int(process.returncode) != 0:
-            print('Command failed. Return code : {}'.format(process.returncode))
+        conn = __conectarse()
+        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        cursor = conn.cursor()
+        cursor.execute("DROP DATABASE {} ;".format(db_name))
+    except Exception as e:
+        print('DB does not exist, nothing to drop')
+    cursor.execute("CREATE DATABASE {} ;".format(db_name))
+    cursor.execute("GRANT ALL PRIVILEGES ON DATABASE {} TO {} ;".format(db_name, user))
+    return db_name
 
+
+def restore_postgres_db(db, backup_file):
+    """ Restore postgres db from a file. """
+    try:
+        with gzip.open(backup_file, 'rb') as f:
+            process = subprocess.Popen(
+                ['pg_restore',
+                '--no-owner',
+                '--dbname=postgresql://{}:{}@{}:{}/{}'.format(db_user, db_pass, db_host, db_port, db),
+                '-v',
+                backup_file],
+                stdout=subprocess.PIPE
+            )
+            output = process.communicate()[0]
+            if int(process.returncode) != 0:
+                print('Command failed. Return code : {}'.format(process.returncode))
+
+        for stdout_line in iter(process.stdout.readline, ""):
+            f.write(stdout_line.encode('utf-8'))    
+            process.stdout.close()
+            process.wait()
         return output
     except Exception as e:
         print("Issue with the db restore : {}".format(e))

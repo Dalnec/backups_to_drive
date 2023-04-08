@@ -1,6 +1,6 @@
 import os
 import time
-from db import create_file, extract_file, get_databases, restore_postgres_db, showDBs
+from db import create_db, create_file, extract_file, get_databases, restore_postgres_db, showDBs
 from send_drive import download_file, list_items, searchFile, uploadFile
 from tools import printProgressBar
 
@@ -46,15 +46,16 @@ def do_backups():
 
     f.close()
 
-def restore_backups(names, type):
+def restore_backups(names, soft_type):
     for name in names:
-        db_name = f"db_{name}.backup.gz" if type=='1' else f"{name}_db.backup.gz"
-        print(db_name)
+        db_name = f"db_{name}.backup.gz" if soft_type=='1' else f"{name}_db.backup.gz"
+        print("1", db_name)
         file_id, file_name = searchFile(100, db_name, '', 'id')
         print(file_id, file_name)
         download_file(file_id, file_name)
         backup_file = extract_file(f'./bk/{file_name}')
-        restore_postgres_db(db_name, backup_file)
+        db = create_db(name, soft_type)
+        restore_postgres_db(db, backup_file)
 
 def main():
     print("\nOPTIONS:")
