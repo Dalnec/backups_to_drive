@@ -1,6 +1,6 @@
 import os
 import time
-from db import create_file, get_databases, showDBs
+from db import create_file, extract_file, get_databases, restore_postgres_db, showDBs
 from send_drive import download_file, list_items, searchFile, uploadFile
 from tools import printProgressBar
 
@@ -46,6 +46,16 @@ def do_backups():
 
     f.close()
 
+def restore_backups(names, type):
+    for name in names:
+        db_name = f"db_{name}.backup.gz" if type=='1' else f"{name}_db.backup.gz"
+        print(db_name)
+        file_id, file_name = searchFile(100, db_name, '', 'id')
+        print(file_id, file_name)
+        download_file(file_id, file_name)
+        backup_file = extract_file(f'./bk/{file_name}')
+        restore_postgres_db(db_name, backup_file)
+
 def main():
     print("\nOPTIONS:")
     print("1.- Show DataBases")
@@ -53,6 +63,7 @@ def main():
     print("3.- Generate Backups")    
     print("4.- List Backups drive")    
     print("5.- Download Backup drive")    
+    print("6.- Download and Restore Backup drive")    
     print("0.- Exit")    
     option = int(input("Enter a number:"))
 
@@ -73,6 +84,12 @@ def main():
         name = input("Enter name:")
         file_id, file_name = searchFile(100, name, '', 'id')
         download_file(file_id, file_name)
+        # main()
+    elif option == 6:
+        names = input("Enter name(s):")
+        names = list(map(str,names.split(' ')))
+        mode = input("zenda(1) o flizzy(2): ")
+        restore_backups(names, mode)
         # main()
     elif option == 0:
         print("Exit")
