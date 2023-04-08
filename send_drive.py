@@ -95,7 +95,7 @@ def download_file(file_id, file_name):
             print(F'Download {int(status.progress() * 100)}.')
         
         file.seek(0)
-        with open(os.path.join('./', file_name), 'wb') as f:
+        with open(os.path.join('./bk', file_name), 'wb') as f:
             f.write(file.read())
             f.close
 

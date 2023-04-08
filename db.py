@@ -4,6 +4,7 @@ import subprocess
 import shutil
 import json
 import time
+import os
 
 with open('config.json', 'r') as config_file:
     config = json.load(config_file)
@@ -60,3 +61,38 @@ def create_file(file_name, owner):
         with gzip.open(gz_name, 'wb') as f_out:
             shutil.copyfileobj(f_in, f_out)
     return file_name_bk, gz_name
+
+
+def extract_file(src_file):
+    extracted_file, extension = os.path.splitext(src_file)
+    print(extracted_file)
+    with gzip.open(src_file, 'rb') as f_in:
+        with open(extracted_file, 'wb') as f_out:
+            for line in f_in:
+                f_out.write(line)
+    return extracted_file
+
+def restore_postgres_db(db, backup_file):
+    """
+    Restore postgres db from a file.
+    """
+
+    try:
+        process = subprocess.Popen(
+            ['pg_restore',
+            '--no-owner',
+            '--dbname=postgresql://{}:{}@{}:{}/{}'.formatdb_(db_user,
+                                                        db_pass,
+                                                        db_host,
+                                                        db_port, eval(db)),
+            '-v',
+            backup_file],
+            stdout=subprocess.PIPE
+        )
+        output = process.communicate()[0]
+        if int(process.returncode) != 0:
+            print('Command failed. Return code : {}'.format(process.returncode))
+
+        return output
+    except Exception as e:
+        print("Issue with the db restore : {}".format(e))
