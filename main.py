@@ -60,7 +60,7 @@ def restore_backups(names, soft_type):
 def just_restore_backups(names, soft_type):
     for name in names:
         db_name = f"db_{name}.backup.gz" if soft_type=='1' else f"{name}_db.backup.gz"
-        backup_file = extract_file(f'./bk/{file_name}')
+        backup_file = extract_file(f'./bk/{db_name}')
         db = create_db(name, soft_type)
         restore_postgres_db(db, backup_file)
 
