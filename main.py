@@ -57,6 +57,13 @@ def restore_backups(names, soft_type):
         db = create_db(name, soft_type)
         restore_postgres_db(db, backup_file)
 
+def just_restore_backups(names, soft_type):
+    for name in names:
+        db_name = f"db_{name}.backup.gz" if soft_type=='1' else f"{name}_db.backup.gz"
+        backup_file = extract_file(f'./bk/{file_name}')
+        db = create_db(name, soft_type)
+        restore_postgres_db(db, backup_file)
+
 def main():
     print("\nOPTIONS:")
     print("1.- Show DataBases")
@@ -64,7 +71,8 @@ def main():
     print("3.- Generate Backups")    
     print("4.- List Backups drive")    
     print("5.- Download Backup drive")    
-    print("6.- Download and Restore Backup drive")    
+    print("6.- Download and Restore Backup drive")
+    print("7.- Restore Backup drive")
     print("0.- Exit")    
     option = int(input("Enter a number:"))
 
@@ -91,6 +99,11 @@ def main():
         names = list(map(str,names.split(' ')))
         mode = input("zenda(1) o flizzy(2): ")
         restore_backups(names, mode)
+    elif option == 7:
+        names = input("Enter name(s):")
+        names = list(map(str,names.split(' ')))
+        mode = input("zenda(1) o flizzy(2): ")
+        just_restore_backups(names, mode)
         # main()
     elif option == 0:
         print("Exit")
