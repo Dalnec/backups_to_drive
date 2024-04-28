@@ -132,3 +132,5 @@ bk/
 credenciales/
 logs.txt
 token.pickle
+token.json
+requirements_old.txt
