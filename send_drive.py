@@ -57,7 +57,7 @@ def list_items():
         for item in items:
             print(u'{0} ({1})'.format(item['name'], item['id']))
 
-def uploadFile(filename,filepath,mimetype):
+def uploadFile(filename, filepath, mimetype):
     services = getCredentials()
     folder_id = '144sUdLku04IQPpOgcvEaNTDwYs8y3vQy'
     file_metadata = {'name': filename, 'parents': [folder_id]}
@@ -65,14 +65,14 @@ def uploadFile(filename,filepath,mimetype):
     file = services.files().create(body = file_metadata, media_body = media, fields='id').execute()
     return file.get('id')
 
-def searchFile(size, queryname, filename, back):
+def searchFile(queryname, filename, back):
     services = getCredentials()
-    mimeType='application/x-rar-compressed'
+    mimeType = "application/gzip" #'application/x-rar-compressed'
     folder_id = '144sUdLku04IQPpOgcvEaNTDwYs8y3vQy'
     q = f"'{folder_id}' in parents and name='{queryname}'"
     results = services.files().list(q=q, spaces='drive', pageSize=10, fields="nextPageToken, files(id, name)").execute()
     items = results.get('files', [])
-    print(items)
+    print(items, "\n")
     
     if not items:
         print('No files found.')        

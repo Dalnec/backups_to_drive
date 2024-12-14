@@ -18,7 +18,8 @@ def do_one_backup(name):
             file_name, gz_file = create_file(db, owner)
             time.sleep(1)
             os.remove(file_name)
-            id_drive_db = uploadFile(gz_file, gz_file, "application/gzip")
+            # id_drive_db = uploadFile(gz_file, gz_file, "application/gzip")
+            id_drive_db = searchFile(100, gz_file, gz_file, "application/gzip")
             f.write(f"{index}: {db} \t=> {id_drive_db}\n")
             os.remove(gz_file)
             time.sleep(1)
@@ -38,7 +39,8 @@ def do_backups():
         file_name, gz_file = create_file(db, owner)
         time.sleep(1)
         os.remove(file_name)
-        id_drive_db = uploadFile(gz_file, gz_file, "application/gzip")
+        # id_drive_db = uploadFile(gz_file, gz_file, "application/gzip")
+        id_drive_db = searchFile(gz_file, gz_file, "application/gzip")
         f.write(f"{index}: {db} \t=> {id_drive_db}\n")
         os.remove(gz_file)
         time.sleep(1)
@@ -50,7 +52,7 @@ def restore_backups(names, soft_type):
     for name in names:
         db_name = f"db_{name}.backup.gz" if soft_type=='1' else f"{name}_db.backup.gz"
         print("1", db_name)
-        file_id, file_name = searchFile(100, db_name, '', 'id')
+        file_id, file_name = searchFile(db_name, '', 'id')
         print(file_id, file_name)
         download_file(file_id, file_name)
         backup_file = extract_file(f'./bk/{file_name}')
