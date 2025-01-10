@@ -46,11 +46,11 @@ def create_file(file_name, owner):
     gz_name = file_name_bk +'.gz'
 
     if owner == 'postgres':
-        # cmd = f"pg_dump --dbname=postgresql://postgres:{db_pass}@127.0.0.1:5432/{file_name} -f {file_name_bk}"
-        cmd = f"PGPASSWORD='{db_pass}' pg_dump -d {file_name} -p 5432 -U postgres -h localhost -F t -f {file_name_bk}"
+        cmd = f"pg_dump --dbname=postgresql://postgres:{db_pass}@127.0.0.1:5432/{file_name} -f {file_name_bk}"
+        # cmd = f"PGPASSWORD='{db_pass}' pg_dump -d {file_name} -p 5432 -U postgres -h localhost -F t -f {file_name_bk}"
     else:
-        # cmd = f"pg_dump --dbname=postgresql://{owner}:{owner}@127.0.0.1:5432/{file_name} -f {file_name_bk}"
-        cmd = f"PGPASSWORD='{owner}' pg_dump -d {file_name} -p 5432 -U {owner} -h localhost -F t -f {file_name_bk}"
+        cmd = f"pg_dump --dbname=postgresql://{owner}:{owner}@127.0.0.1:5432/{file_name} -f {file_name_bk}"
+        # cmd = f"PGPASSWORD='{owner}' pg_dump -d {file_name} -p 5432 -U {owner} -h localhost -F t -f {file_name_bk}"
 
     with gzip.open(file_name_bk, 'wb') as f:
         popen = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, universal_newlines=True)    

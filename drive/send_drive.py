@@ -26,19 +26,19 @@ def getCredentials():
     #         creds = flow.run_local_server(port=0)
     #     with open('token.pickle', 'wb') as token:
     #         pickle.dump(creds, token)
-    if os.path.exists("token.json"):
-        creds = Credentials.from_authorized_user_file("token.json", SCOPES)
+    if os.path.exists("drive/token.json"):
+        creds = Credentials.from_authorized_user_file("drive/token.json", SCOPES)
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
             flow = InstalledAppFlow.from_client_secrets_file(
-                'credenciales/credentials.json', SCOPES
+                'drive/credentials.json', SCOPES
             )
             creds = flow.run_local_server(port=0)
         # Save the credentials for the next run
-        with open("token.json", "w") as token:
+        with open("drive/token.json", "w") as token:
             token.write(creds.to_json())
 
     service = build('drive', 'v3', credentials=creds, cache_discovery=False, static_discovery=False)
@@ -62,8 +62,10 @@ def uploadFile(filename, filepath, mimetype):
     folder_id = '144sUdLku04IQPpOgcvEaNTDwYs8y3vQy'
     file_metadata = {'name': filename, 'parents': [folder_id]}
     media = MediaFileUpload(filepath, mimetype = mimetype, resumable = True)
-    file = services.files().create(body = file_metadata, media_body = media, fields='id').execute()
-    return file.get('id')
+    file = services.files().create(body = file_metadata, media_body = media, fields='id, name').execute()
+    print("File ID:", file.get('id'))
+    print("File Name:", file.get('name'))
+    return file
 
 def searchFile(queryname, filename, back):
     services = getCredentials()
@@ -72,19 +74,19 @@ def searchFile(queryname, filename, back):
     q = f"'{folder_id}' in parents and name='{queryname}'"
     results = services.files().list(q=q, spaces='drive', pageSize=10, fields="nextPageToken, files(id, name)").execute()
     items = results.get('files', [])
-    print(items, "\n")
+    print(items)
     
     if not items:
         print('No files found.')        
-        uploadFile(filename, filename, mimeType)
+        item = uploadFile(filename, filename, mimeType)
+        return item
     else:
         print('Files found.')
+        fileId = items[0]['id']
         if back == 'id':
-            return items[0]['id'], items[0]['name']
+            return fileId, items[0]['name']
 
-        for item in items:            
-            fileId = item['id']
-        updateFile(fileId, filename, mimeType)
+        item = updateFile(fileId, filename, mimeType)
         return item
     
 def updateFile(file_id, new_filename, new_mime_type):
@@ -92,8 +94,10 @@ def updateFile(file_id, new_filename, new_mime_type):
         services = getCredentials()
         file = {}
         media_body = MediaFileUpload(new_filename, mimetype=new_mime_type, resumable=True)
-        updated_file = services.files().update(fileId=file_id, body=file, media_body=media_body).execute()
-        return print('Updated: %s' % (updated_file['id']))
+        updated_file = services.files().update(fileId=file_id, body=file, media_body=media_body, fields='id, name').execute()
+        print('Updated File ID:', updated_file.get('id'))
+        print('Updated File Name:', updated_file.get('name'))
+        return updated_file
     except errors.HttpError as error:
         print('%s An error occurred: %s' % (error)) 
         return None
